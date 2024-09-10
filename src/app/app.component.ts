@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { PeriodicTableComponent } from '../components/table/table.component';
+import { PeriodicTableComponent } from '../components/table/periodic-table.component';
 
 @Component({
   selector: 'app-root',

@@ -23,3 +23,8 @@ table {
 .mat-mdc-row .mat-mdc-cell:hover {
   background-color: yellow;
 }
+
+.filter-input-container {
+  display: flex;
+  justify-content: center;
+}
