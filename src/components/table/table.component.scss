@@ -1,0 +1,25 @@
+table {
+  width: 100%;
+}
+
+.mat-mdc-header-row {
+  text-align: left;
+}
+
+.mat-mdc-header-row th {
+  padding: 0 16px;
+}
+
+.mat-mdc-row .mat-mdc-cell {
+  border-bottom: 1px solid transparent;
+  border-top: 1px solid transparent;
+  cursor: pointer;
+}
+
+.mat-mdc-row:hover .mat-mdc-cell {
+  border-color: currentColor;
+}
+
+.mat-mdc-row .mat-mdc-cell:hover {
+  background-color: yellow;
+}
