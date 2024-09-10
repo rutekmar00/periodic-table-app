@@ -7,6 +7,7 @@ This project is an Periodic Table application built with Angular and Angular Mat
 - display periodic table based on fetched data
 - change the value in the cell
 - filter records
+- sort by column
 
 ## Development server
 

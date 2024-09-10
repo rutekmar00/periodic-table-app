@@ -1,0 +1,37 @@
+<mat-dialog-content>
+  <mat-form-field>
+    <mat-label>Value</mat-label>
+    <input
+      matInput
+      placeholder="Enter new value"
+      [formControl]="inputFormControl"
+      [attr.maxlength]="this.data.cellType === 'symbol' ? 2 : null"
+    />
+
+    <div
+      *ngIf="
+        inputFormControl?.invalid &&
+        (inputFormControl?.dirty || inputFormControl?.touched)
+      "
+    >
+      <small class="error">
+        {{ errorMessage }}
+      </small>
+    </div>
+    <small *ngIf="this.data.cellType === 'symbol'"
+      >Symbol can have maximum two characters</small
+    >
+  </mat-form-field>
+  <mat-dialog-actions>
+    <button mat-button (click)="onCloseClick()">Close</button>
+    <button
+      mat-button
+      (click)="onSaveClick()"
+      [disabled]="
+        inputFormControl.invalid || !inputFormControl.dirty || isTheSameValue()
+      "
+    >
+      Save
+    </button>
+  </mat-dialog-actions>
+</mat-dialog-content>

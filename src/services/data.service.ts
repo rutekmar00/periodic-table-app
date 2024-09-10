@@ -6,6 +6,7 @@ export type PeriodicElement = {
   name: string;
   weight: number;
   symbol: string;
+  [key: string]: string | number;
 };
 
 const ELEMENT_DATA: PeriodicElement[] = [
