@@ -1,13 +1,23 @@
-import { Component, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import {
+  Component,
+  inject,
+  OnDestroy,
+  QueryList,
+  ViewChildren,
+} from '@angular/core';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { DataService, PeriodicElement } from '../../services/data.service';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
-import { debounceTime, Subscription } from 'rxjs';
+import { combineLatest, map, Observable, startWith, Subscription } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogComponent } from '../dialog/dialog.component';
+import { CommonModule } from '@angular/common';
+import { RxLet } from '@rx-angular/template/let';
+import { debounceAfterFirst } from '../../rxjs-operators';
+import { MatPaginator } from '@angular/material/paginator';
 
 @Component({
   selector: 'app-periodic-table',
@@ -18,40 +28,52 @@ import { DialogComponent } from '../dialog/dialog.component';
     MatFormFieldModule,
     MatInputModule,
     ReactiveFormsModule,
+    CommonModule,
+    RxLet,
   ],
   templateUrl: './periodic-table.component.html',
   styleUrl: './periodic-table.component.scss',
 })
-export class PeriodicTableComponent implements OnInit, OnDestroy {
-  tableDataSource = new MatTableDataSource<PeriodicElement>();
+export class PeriodicTableComponent implements OnDestroy {
+  tableDataSource: MatTableDataSource<PeriodicElement, MatPaginator> | null =
+    null;
   filterInput: FormControl;
-  inputValueChangesSubscription: Subscription | null = null;
   dialogClosedSubscription: Subscription | null = null;
+  elements$: Observable<PeriodicElement[]>;
+  elementsDataSource$:
+    | Observable<MatTableDataSource<PeriodicElement, MatPaginator>>
+    | undefined;
 
-  @ViewChild(MatSort) sort!: MatSort;
+  @ViewChildren(MatSort) sort!: QueryList<MatSort>;
 
   dialog = inject(MatDialog);
 
   constructor(private dataService: DataService) {
     this.filterInput = new FormControl('', []);
+    this.elements$ = this.dataService.getElements();
   }
 
-  ngOnInit(): void {
-    this.fetchData();
-    this.inputValueChangesSubscription = this.filterInput.valueChanges
-      .pipe(debounceTime(2000))
-      .subscribe((value) => {
-        this.tableDataSource.filter = value;
-      });
+  ngOnInit() {
+    this.elementsDataSource$ = combineLatest([
+      this.elements$,
+      this.filterInput.valueChanges.pipe(
+        startWith(''),
+        debounceAfterFirst(2000)
+      ),
+    ]).pipe(
+      map(([elements, filterInput]) => {
+        if (!this.tableDataSource) {
+          this.tableDataSource = new MatTableDataSource(elements);
+        }
+        this.tableDataSource.filter = filterInput;
+        return this.tableDataSource;
+      })
+    );
   }
 
   ngAfterViewInit() {
-    this.tableDataSource.sort = this.sort;
-  }
-
-  fetchData() {
-    this.dataService.getData().subscribe((data) => {
-      this.tableDataSource.data = data;
+    this.sort.changes.subscribe((s) => {
+      if (this.tableDataSource) this.tableDataSource.sort = s.first;
     });
   }
 
@@ -80,26 +102,26 @@ export class PeriodicTableComponent implements OnInit, OnDestroy {
 
             newElement[cellType] = newValue;
           }
+          if (this.tableDataSource) {
+            const indexInSource = this.tableDataSource.data.findIndex(
+              (object) => {
+                return object === element;
+              }
+            );
 
-          const indexInSource = this.tableDataSource.data.findIndex(
-            (object) => {
-              return object === element;
-            }
-          );
+            const newData = [
+              ...this.tableDataSource.data.slice(0, indexInSource),
+              newElement,
+              ...this.tableDataSource.data.slice(indexInSource + 1),
+            ];
 
-          const newData = [
-            ...this.tableDataSource.data.slice(0, indexInSource),
-            newElement,
-            ...this.tableDataSource.data.slice(indexInSource + 1),
-          ];
-
-          this.tableDataSource.data = newData;
+            this.tableDataSource.data = newData;
+          }
         }
       });
   }
 
   ngOnDestroy(): void {
-    this.inputValueChangesSubscription?.unsubscribe();
     this.dialogClosedSubscription?.unsubscribe();
   }
 }

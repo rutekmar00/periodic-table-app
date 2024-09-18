@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { of, shareReplay, tap } from 'rxjs';
+import { RxState } from '@rx-angular/state';
 
 export type PeriodicElement = {
   position: number;
@@ -22,17 +23,32 @@ const ELEMENT_DATA: PeriodicElement[] = [
   { position: 10, name: 'Neon', weight: 20.1797, symbol: 'Ne' },
 ];
 
+interface AppState {
+  elements: PeriodicElement[];
+}
+
 @Injectable({
   providedIn: 'root',
 })
-export class DataService {
-  elementData: Observable<PeriodicElement[]>;
-
+export class DataService extends RxState<AppState> {
   constructor() {
-    this.elementData = of(ELEMENT_DATA);
+    super();
+    this.setup();
   }
 
-  getData() {
-    return this.elementData;
+  setup() {
+    return this.fetchElements()
+      .pipe(
+        tap((elements) => this.set({ elements })),
+        shareReplay(1)
+      )
+      .subscribe();
+  }
+
+  private fetchElements() {
+    return of(ELEMENT_DATA);
+  }
+  getElements() {
+    return this.select('elements');
   }
 }
